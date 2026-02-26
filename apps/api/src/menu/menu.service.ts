@@ -83,4 +83,30 @@ export class MenuService {
       },
     });
   }
+
+     // Método Público: Devuelve Categorías con sus productos adentro
+  async findAllPublic() {
+    // Trae todas las categorías y sus productos relacionados
+    return this.prisma.category.findMany({
+      include: {
+        products: true, // <--- Mágico: Incluye los productos de cada categoría
+      },
+      orderBy: {
+        name: 'asc', // Ordenar alfabéticamente
+      },
+    });
+  }
+
+
+  async findOnePublic(id: string) {
+    return this.prisma.product.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        description: true,
+      },
+    });
+  }
 }

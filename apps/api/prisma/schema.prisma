@@ -12,6 +12,7 @@ model Tenant {
   slug      String   @unique
   name      String
   users     User[]
+  categories Category[]
   products Product[]
   orders    Order[]
   createdAt DateTime @default(now())
@@ -26,13 +27,25 @@ model User {
   orders    Order[]
 }
 
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  tenantId  String    // Las categorías también son por antro
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  products  Product[] // Una categoría tiene muchos productos
+  createdAt DateTime  @default(now())
+}
+
 model Product {
   id          String   @id @default(cuid())
   name        String
   price       Decimal  @db.Decimal(10, 2)
   description String?
   tenantId    String 
-  tenant      Tenant   @relation(fields: [tenantId], references: [id]) // Relación con Tenant
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  categoryId  String?  // Opcional por ahora para no romper productos viejos
+  category    Category? @relation(fields: [categoryId], references: [id])
   orderItems OrderItem[]
   createdAt   DateTime @default(now())
 }
