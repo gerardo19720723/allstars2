@@ -13,6 +13,7 @@ model Tenant {
   name      String
   users     User[]
   products Product[]
+  orders    Order[]
   createdAt DateTime @default(now())
 }
 
@@ -22,6 +23,7 @@ model User {
   password  String
   tenantId  String
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  orders    Order[]
 }
 
 model Product {
@@ -31,5 +33,29 @@ model Product {
   description String?
   tenantId    String 
   tenant      Tenant   @relation(fields: [tenantId], references: [id]) // Relación con Tenant
+  orderItems OrderItem[]
   createdAt   DateTime @default(now())
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  tenantId  String
+  tenant    Tenant      @relation(fields: [tenantId], references: [id])
+  userId    String?     // Opcional: para invitados
+  user      User?       @relation(fields: [userId], references: [id])
+  status    String      @default("PENDING") // PENDING, PAID, CANCELLED, COMPLETED
+  total     Decimal     @default(0) @db.Decimal(10, 2)
+  items     OrderItem[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int      @default(1)
+  price     Decimal  @db.Decimal(10, 2) // Guardamos el precio al momento de comprar
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
 }
