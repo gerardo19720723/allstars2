@@ -2,28 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { OrderGateway } from './order.gateway';
 
 @Injectable()
 export class OrderService {
-    async update(id: string, updateOrderDto: UpdateOrderDto, tenantId: string) {
-    // 1. Verificar que la orden existe y pertenece al tenant
-    const order = await this.prisma.order.findFirst({
-      where: { id, tenantId },
-    });
-
-    if (!order) {
-      throw new NotFoundException('Orden no encontrada');
-    }
-
-    // 2. Actualizar el estado
-    return this.prisma.order.update({
-      where: { id },
-      data: {
-        status: updateOrderDto.status,
-      },
-    });
-  }
-  constructor(private prisma: PrismaService) {}
+    constructor(
+    private prisma: PrismaService,
+    private orderGateway: OrderGateway // <--- Inyectar
+  ) {}
 
   async create(dto: CreateOrderDto, tenantId: string, userId?: string) {
     // Usamos una transacción para asegurar que todo se guarde o nada se guarde
@@ -74,10 +60,16 @@ export class OrderService {
     });
   }
 
-  async findAll(tenantId: string) {
+    async findAll(tenantId: string) {
     return this.prisma.order.findMany({
       where: { tenantId },
-      include: { items: true }, // Incluir detalles
+      include: {
+        items: {
+          include: {
+            product: true // <--- ESTA ES LA LÍNEA CLAVE. ¿Está ahí?
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -89,5 +81,23 @@ export class OrderService {
     });
   }
   
-  // Update y Delete los dejamos pendientes por ahora para avanzar
+  async update(id: string, updateOrderDto: UpdateOrderDto, tenantId: string) {
+    // 1. Verificar
+    const order = await this.prisma.order.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!order) throw new NotFoundException('Orden no encontrada');
+
+    // 2. Actualizar
+    const updatedOrder = await this.prisma.order.update({
+      where: { id },
+      data: { status: updateOrderDto.status },
+    });
+
+    // 3. NOTIFICAR A TODOS LOS CLIENTES (Dashboard)
+    this.orderGateway.notifyOrderUpdate(updatedOrder);
+
+    return updatedOrder;
+  }
 }
