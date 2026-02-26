@@ -12,6 +12,7 @@ model Tenant {
   slug      String   @unique
   name      String
   users     User[]
+  products Product[]
   createdAt DateTime @default(now())
 }
 
@@ -21,4 +22,14 @@ model User {
   password  String
   tenantId  String
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  price       Decimal  @db.Decimal(10, 2)
+  description String?
+  tenantId    String 
+  tenant      Tenant   @relation(fields: [tenantId], references: [id]) // Relación con Tenant
+  createdAt   DateTime @default(now())
 }
