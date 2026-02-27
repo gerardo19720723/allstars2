@@ -30,6 +30,9 @@ model Tenant {
   categories Category[]
   products Product[]
   orders    Order[]
+  guests        Guest[]
+  guestLists    GuestList[]
+  accessLogs    AccessLog[]
   createdAt DateTime @default(now())
 }
 
@@ -87,4 +90,43 @@ model OrderItem {
   price     Decimal  @db.Decimal(10, 2) // Guardamos el precio al momento de comprar
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product  @relation(fields: [productId], references: [id])
+}
+
+model Guest {
+  id            String    @id @default(cuid())
+  tenantId      String
+  tenant        Tenant    @relation(fields: [tenantId], references: [id])
+  name          String?   // Nombre del cliente
+  email         String?   // Si tiene cuenta
+  status        String    @default("CHECKED_IN") // CHECKED_IN, DENIED, LEFT
+  ticketType    String?   // VIP, GENERAL, STAFF
+  entryTime     DateTime  @default(now())
+  accessLogs    AccessLog[]
+  
+  @@index([tenantId, status])
+}
+
+model GuestList {
+  id            String   @id @default(cuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  name          String
+  guestCount    Int      // Cuántas personas trae
+  note          String?  // Ej: "Cumpleaños", "Mesa VIP"
+  isVip         Boolean  @default(false)
+  expectedAt    DateTime // A qué hora se espera
+  createdAt     DateTime @default(now())
+  
+  @@index([tenantId, expectedAt])
+}
+
+model AccessLog {
+  id            String   @id @default(cuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  guestId      String?
+  guest         Guest?   @relation(fields: [guestId], references: [id])
+  action        String   // CHECK_IN, DENIED
+  reason        String?  // Por qué se le negó (ej: "Aforo lleno")
+  timestamp     DateTime @default(now())
 }
