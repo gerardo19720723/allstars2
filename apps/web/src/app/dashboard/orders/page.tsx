@@ -85,8 +85,19 @@ export default function DashboardOrdersPage() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
-      <header className="mb-8 border-b border-gray-700 pb-4">
-        <h1 className="text-3xl font-bold">👨‍🍳 KDS</h1>
+            <header className="mb-8 border-b border-gray-700 pb-4 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">👨‍🍳 Kitchen Display System (KDS)</h1>
+          <p className="text-gray-400">Pedidos Activos en Tiempo Real</p>
+        </div>
+
+        {/* BOTÓN HISTORIAL */}
+        <a
+          href="/dashboard/history"
+          className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm font-bold transition"
+        >
+          Ir a Historial 💰
+        </a>
       </header>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {orders.map((order) => (
