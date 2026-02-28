@@ -8,7 +8,7 @@ import { OrderGateway } from './order.gateway';
 export class OrderService {
     constructor(
     private prisma: PrismaService,
-    private orderGateway: OrderGateway // <--- Inyectar
+    private orderGateway: OrderGateway 
   ) {}
 
   async create(dto: CreateOrderDto, tenantId: string, userId?: string) {
@@ -22,7 +22,7 @@ export class OrderService {
         const product = await tx.product.findFirst({
           where: {
             id: item.productId,
-            tenantId: tenantId, // Seguridad: No puedo pedir productos de otro antro
+            tenantId: tenantId, 
           },
         });
 
@@ -36,7 +36,7 @@ export class OrderService {
         orderItemsToCreate.push({
           productId: item.productId,
           quantity: item.quantity,
-          price: product.price, // Guardamos el precio de HOY
+          price: product.price, 
         });
       }
 
@@ -44,15 +44,16 @@ export class OrderService {
       const order = await tx.order.create({
         data: {
           tenantId,
-          userId,
+          // CORRECCIÓN: Mapeamos el parámetro 'userId' a la columna 'customerId' de la DB
+          customerId: userId, 
           total: totalAmount,
           status: 'PENDING',
           items: {
-            create: orderItemsToCreate, // Crear los items en cascada
+            create: orderItemsToCreate, 
           },
         },
         include: {
-          items: true, // Devolver los items en la respuesta
+          items: true, 
         },
       });
 
@@ -66,7 +67,7 @@ export class OrderService {
       include: {
         items: {
           include: {
-            product: true // <--- ESTA ES LA LÍNEA CLAVE. ¿Está ahí?
+            product: true 
           }
         }
       },
@@ -95,7 +96,8 @@ export class OrderService {
       data: { status: updateOrderDto.status },
     });
 
-    // 3. NOTIFICAR A TODOS LOS CLIENTES (Dashboard)
+    // 3. NOTIFICAR (Ojo: Si OrderGateway no está configurado, esto crasheará el backend)
+    // Si te da error de red más tarde, comenta esta línea temporalmente
     this.orderGateway.notifyOrderUpdate(updatedOrder);
 
     return updatedOrder;

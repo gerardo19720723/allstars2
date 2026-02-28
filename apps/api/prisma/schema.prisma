@@ -33,6 +33,8 @@ model Tenant {
   guests        Guest[]
   guestLists    GuestList[]
   accessLogs    AccessLog[]
+  djSessions    DjSession[]
+  customers Customer[]
   createdAt DateTime @default(now())
 }
 
@@ -43,7 +45,25 @@ model User {
   tenantId  String
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
   role      UserRole @default(STAFF)
-  orders    Order[]
+  djSessions  DjSession[]
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  
+  // Datos de Fidelización (Loyalty)
+  email     String?  // Opcional al principio, obligatorio si se registran
+  phone     String?  // Para enviar notificaciones o login
+  points    Int      @default(0) // <--- AQUÍ EMPIEZA TU FIDELIZACIÓN
+  
+  // Relación con el Local (Tenant)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  
+  // Comportamiento del Cliente
+  votes     CustomerVote[]
+  orders    Order[]  // Los pedidos reales (bebidas/comida)
+  createdAt DateTime @default(now())
 }
 
 model Category {
@@ -73,8 +93,8 @@ model Order {
   id        String      @id @default(cuid())
   tenantId  String
   tenant    Tenant      @relation(fields: [tenantId], references: [id])
-  userId    String?     // Opcional: para invitados
-  user      User?       @relation(fields: [userId], references: [id])
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
   status    OrderStatus @default(PENDING)
   total     Decimal     @default(0) @db.Decimal(10, 2)
   items     OrderItem[]
@@ -129,4 +149,42 @@ model AccessLog {
   action        String   // CHECK_IN, DENIED
   reason        String?  // Por qué se le negó (ej: "Aforo lleno")
   timestamp     DateTime @default(now())
+}
+
+model DjSession {
+  id            String   @id @default(cuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  djUserId      String?  // Si hay un DJ registrado logueado
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
+  isActive      Boolean  @default(true)
+  currentVibe   String?  // "Techno", "Reggaeton", etc.
+  requests      SongRequest[]
+   createdAt     DateTime @default(dbgenerated("now()"))
+}
+
+model SongRequest {
+  id            String   @id @default(cuid())
+  sessionId     String
+  session       DjSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  songUri       String   // URI de Spotify (ej: "spotify:track:...")
+  songTitle     String   // Título visible
+  artistName    String   // Artista visible
+  status        String   @default("PENDING") // PENDING, APPROVED, PLAYED, REJECTED, SKIPPED
+  isPriority    Boolean  @default(false) // Si pagó para saltar la cola
+  votes         Int      @default(0)
+  playedAt      DateTime?
+  createdAt     DateTime @default(dbgenerated("now()"))
+
+  @@index([sessionId, status])
+}
+
+model CustomerVote {
+  id        String   @id @default(cuid())
+  requestId String
+  customerId String
+  customer  Customer @relation(fields: [customerId], references: [id])
+  
+  @@unique([requestId, customerId])
 }
