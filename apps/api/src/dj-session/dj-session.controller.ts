@@ -26,7 +26,7 @@ export class DjSessionController {
   @Post('vote')
   async vote(@Body() body: { requestId: string, userId: string, tenantId?: string }, @Req() req: any ) {
      console.log(`🔴 [BACKEND] Recibiendo voto. User: ${body.userId}, Request: ${body.requestId}`);
-    const tenantId = req.user?.tenantId || body.tenantId || 'cmm62yunu00006pk1u2y2y286'; 
+    const tenantId = req.user?.tenantId || body.tenantId || 'default-tenant'; 
     return this.djSessionService.vote(body.userId, body.requestId, tenantId);
   }
 

@@ -89,21 +89,19 @@ export class DjSessionService {
 
     return { success: true, message: 'Voto registrado' };
   }
-
-  /**
+    /**
    * Obtiene la cola de canciones.
    * ORDEN: 
    * 1. PLAYING (Primero, para que el Frontend las pinte de Verde)
    * 2. PENDING (Ordenadas por Ranking de Votos)
-   * 
-   * Las canciones PLAYED se excluyen (se eliminan de la vista).
    */
   async getQueue(sessionId: string) {
-    // 1. Traer solo las canciones activas (Esto elimina automáticamente las PLAYED de la vista)
+    // 1. TRAER LAS CANCIONES 'PLAYING' Y 'PENDING'
+    // IMPORTANTE: Si no pones 'PLAYING' aquí, desaparecerán al dar Play.
     const requests = await this.prismaService.songRequest.findMany({
       where: { 
         sessionId,
-        status: { in: ['PLAYING', 'PENDING'] }
+        status: { in: ['PLAYING', 'PENDING'] } 
       },
       orderBy: { createdAt: 'asc' } 
     });
@@ -115,27 +113,19 @@ export class DjSessionService {
     // 3. Aplicar algoritmo de Ranking SOLO a los pendientes
     const rankedPending = pending.map(req => {
       let score = 0;
-
       // A. Votos (+10 puntos cada uno)
       score += req.votes * 10;
-
       // B. Donación/Prioridad (+1000 puntos)
-      if (req.isPriority) {
-        score += 1000;
-      }
-
-      // C. Factor Antigüedad (Penalización ligera para que las viejas no se acumulen infinitamente)
-      // Quitamos 1 punto cada 100 segundos desde que se pidió
+      if (req.isPriority) score += 1000;
+      // C. Factor Antigüedad
       const timeInQueue = Date.now() - new Date(req.createdAt).getTime();
       score -= Math.floor(timeInQueue / 100000);
-
       return { ...req, score };
     });
 
-    // 4. Ordenar pendientes por puntaje
     rankedPending.sort((a, b) => b.score - a.score);
 
-    // 5. Retornar: Primero la que suena, luego las ordenadas por ranking
+    // 4. Retornar: Primero la que suena (Verde), luego las ordenadas (Gris)
     return [...playingNow, ...rankedPending];
   }
 
@@ -186,12 +176,12 @@ export class DjSessionService {
     if (status === 'PLAYED') {
       updateData.playedAt = new Date();
     }
-
+    console.log(`🎛️ [SERVICE] Actualizando DB...`);
     const updatedRequest = await this.prismaService.songRequest.update({
       where: { id },
       data: updateData
     });
-
+    console.log(`🎛️ [SERVICE] Notificando Socket...`);
     // Notificar al DJ el cambio en la lista
     this.djGateway.notifyQueueUpdate(await this.getQueue(updatedRequest.sessionId));
 

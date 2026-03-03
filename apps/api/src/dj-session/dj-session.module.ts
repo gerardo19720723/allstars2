@@ -10,5 +10,6 @@ import { DjGateway } from './gateways/dj.gateway';
   ],
   controllers: [DjSessionController],
   providers: [DjSessionService, DjGateway],
+  exports: [DjGateway],
 })
 export class DjSessionModule {}

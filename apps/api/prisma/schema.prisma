@@ -36,6 +36,9 @@ model Tenant {
   djSessions    DjSession[]
   customers Customer[]
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  genres       Genre[]
+  genreSessions GenreSession[]
 }
 
 model User {
@@ -63,6 +66,7 @@ model Customer {
   // Comportamiento del Cliente
   votes     CustomerVote[]
   orders    Order[]  // Los pedidos reales (bebidas/comida)
+  genreVotes GenreVote[]
   createdAt DateTime @default(now())
 }
 
@@ -187,4 +191,47 @@ model CustomerVote {
   customer  Customer @relation(fields: [customerId], references: [id])
   
   @@unique([requestId, customerId])
+}
+
+model Genre {
+  id        String   @id @default(cuid())
+  name      String   // Ej: "Reggaeton", "House", "Salsa"
+  emoji     String?  // Ej: "🔥", "🎹"
+  
+  // Relación con el Tenant (Un local puede tener sus géneros favoritos)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  
+  // Relación con las votaciones
+  votes     GenreVote[]
+  
+  @@unique([name, tenantId]) // Un Tenant no puede tener 2 géneros con mismo nombre
+}
+
+model GenreSession {
+  id        String   @id @default(cuid())
+  isActive  Boolean  @default(true) // Si true, los clientes ven la batalla
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  
+  // Relación con los votos realizados en esta sesión
+  votes     GenreVote[]
+}
+
+model GenreVote {
+  id        String   @id @default(cuid())
+  
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  
+  genreId     String
+  genre       Genre    @relation(fields: [genreId], references: [id])
+  
+  sessionId   String // A qué "Round" pertenece este voto
+  session     GenreSession @relation(fields: [sessionId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  
+  // Un cliente solo puede votar UNA vez por sesión de batalla
+  @@unique([customerId, sessionId])
 }
