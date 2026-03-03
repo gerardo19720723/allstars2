@@ -197,12 +197,25 @@ export default function ClientRequestsPage() {
   // --- 4. RENDERIZADO ---
   if (loading) return <div className="text-center mt-20 text-white">Cargando...</div>;
 
-  return (
+   return (
     <main className="min-h-screen bg-gray-900 text-white p-4">
       <div className="max-w-md mx-auto">
-        <h1 className="text-3xl font-bold">🎤 Solicitud de Música</h1>
-        <p className="text-gray-400">Influye en el ambiente 🌊</p>
-
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">🎤 Solicitud de Música</h1>
+            <p className="text-gray-400">Influye en el ambiente 🌊</p>
+          </div>
+          
+          {/* BOTÓN IR AL PERFIL */}
+          <a 
+            href="/client/profile"
+            className="bg-yellow-600 hover:bg-yellow-500 text-white p-3 rounded-full shadow-lg transition-transform hover:scale-110"
+            title="Ver mi Perfil"
+          >
+            👤
+          </a>
+        </div> {/* <-- ESTE </div> FALTABA */}
+        
         {/* CONTENEDOR PRINCIPAL */}
         <div className="space-y-4 mt-8">
           
@@ -212,7 +225,7 @@ export default function ClientRequestsPage() {
               <h2 className="text-2xl font-bold text-center mb-6 text-pink-500 animate-pulse">
                 ⚔️ ¿Que quieres escuchar?
               </h2>
-                            <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 {/* CAMBIO DE genres A battleGenres */}
                 {battleGenres.map((g) => (
                   <button
@@ -319,7 +332,7 @@ export default function ClientRequestsPage() {
         >
           🎵 Pedir Música +
         </button>
-      </div>
+      </div> {/* <-- ESTE </div> CIERRA EL max-w-md mx-auto */}
     </main>
   );
 }

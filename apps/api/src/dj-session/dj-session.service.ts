@@ -7,7 +7,7 @@ interface CreateRequestDto {
   songTitle: string;
   artistName: string;
   isPriority: boolean;
-  tenantId?: string; // Opcional
+  tenantId?: string;
 }
 
 @Injectable()
@@ -22,7 +22,7 @@ export class DjSessionService {
    * 1. Crea/Actualiza el Cliente (Fidelización).
    * 2. Verifica que no haya votado antes.
    * 3. Crea el voto, suma puntos al cliente y suma votos a la canción en una transacción.
-   * 4. Notifica al DJ.
+   * 4. Notifica al DJ y al Cliente (NUEVO).
    */
   async vote(customerId: string, requestId: string, tenantId: string) {
     // 1. Asegurar que el cliente existe (Upsert en tabla Customer)
@@ -51,7 +51,8 @@ export class DjSessionService {
     }
 
     // 3. Ejecutar Transacción (Todo o nada)
-    await this.prismaService.$transaction([
+    // IMPORTANTE: Capturamos el resultado del customerUpdate para tener los puntos nuevos
+    const [vote, updatedCustomer, song] = await this.prismaService.$transaction([
       // A. Crear el registro del voto en CustomerVote
       this.prismaService.customerVote.create({
         data: {
@@ -66,8 +67,7 @@ export class DjSessionService {
           points: { increment: 1 }
         },
       }),
-      // C. (IMPORTANTE) Incrementar el contador de votos en la canción (SongRequest)
-      // Sin esto, el algoritmo de getQueue no subirá la canción.
+      // C. Incrementar el contador de votos en la canción (SongRequest)
       this.prismaService.songRequest.update({
         where: { id: requestId },
         data: {
@@ -77,7 +77,6 @@ export class DjSessionService {
     ]);
 
     // 4. Obtener la sesión para notificar
-    // Necesitamos saber a qué sesión pertenece el requestId para enviar la actualización correcta
     const request = await this.prismaService.songRequest.findUnique({
       where: { id: requestId }
     });
@@ -87,17 +86,24 @@ export class DjSessionService {
       this.djGateway.notifyQueueUpdate(await this.getQueue(request.sessionId));
     }
 
+    // --- NUEVO: Notificar al Cliente sus puntos actualizados ---
+    if (updatedCustomer) {
+      this.djGateway.server.emit('pointsUpdated', { 
+        customerId: customerId, 
+        points: updatedCustomer.points 
+      });
+    }
+
     return { success: true, message: 'Voto registrado' };
   }
-    /**
-   * Obtiene la cola de canciones.
-   * ORDEN: 
-   * 1. PLAYING (Primero, para que el Frontend las pinte de Verde)
-   * 2. PENDING (Ordenadas por Ranking de Votos)
+
+  /**
+   * Obtiene la cola de canciones ORDENADA por algoritmo de ranking.
+   * ORDEN: Playing Now (Verde) -> PENDING (Ordenadas por Ranking de Votos)
+   * Las PLAYED no se muestran (se eliminan de la vista).
    */
   async getQueue(sessionId: string) {
-    // 1. TRAER LAS CANCIONES 'PLAYING' Y 'PENDING'
-    // IMPORTANTE: Si no pones 'PLAYING' aquí, desaparecerán al dar Play.
+    // 1. TRAER TANTO 'PLAYING' COMO 'PENDING'
     const requests = await this.prismaService.songRequest.findMany({
       where: { 
         sessionId,
@@ -106,7 +112,7 @@ export class DjSessionService {
       orderBy: { createdAt: 'asc' } 
     });
 
-    // 2. Separar listas: Las que suenan vs las que esperan
+    // 2. Separar listas
     const playingNow = requests.filter(r => r.status === 'PLAYING');
     const pending = requests.filter(r => r.status === 'PENDING');
 
@@ -120,12 +126,13 @@ export class DjSessionService {
       // C. Factor Antigüedad
       const timeInQueue = Date.now() - new Date(req.createdAt).getTime();
       score -= Math.floor(timeInQueue / 100000);
+      
       return { ...req, score };
     });
 
     rankedPending.sort((a, b) => b.score - a.score);
 
-    // 4. Retornar: Primero la que suena (Verde), luego las ordenadas (Gris)
+    // 4. Retornar: Primero la que suena, luego las ordenadas
     return [...playingNow, ...rankedPending];
   }
 
@@ -140,8 +147,8 @@ export class DjSessionService {
       console.log(`La sesión ${sessionId} no existe. Creándola automáticamente...`);
       session = await this.prismaService.djSession.create({
         data: {
-          id: sessionId, // Usamos el ID que manda el Frontend
-          tenantId: data.tenantId || 'default-tenant', // En prod esto vendría del Token
+          id: sessionId, 
+          tenantId: data.tenantId || 'default-tenant', 
           isActive: true
         }
       });
@@ -151,7 +158,7 @@ export class DjSessionService {
     const request = await this.prismaService.songRequest.create({
       data: {
         sessionId: session.id,
-        songUri: 'spotify:track:placeholder', // Ajustar si usas Spotify real
+        songUri: 'spotify:track:placeholder',
         songTitle: data.songTitle,
         artistName: data.artistName,
         status: 'PENDING',
@@ -176,12 +183,12 @@ export class DjSessionService {
     if (status === 'PLAYED') {
       updateData.playedAt = new Date();
     }
-    console.log(`🎛️ [SERVICE] Actualizando DB...`);
+
     const updatedRequest = await this.prismaService.songRequest.update({
       where: { id },
       data: updateData
     });
-    console.log(`🎛️ [SERVICE] Notificando Socket...`);
+
     // Notificar al DJ el cambio en la lista
     this.djGateway.notifyQueueUpdate(await this.getQueue(updatedRequest.sessionId));
 

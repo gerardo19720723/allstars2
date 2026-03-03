@@ -8,6 +8,7 @@ import { OrderModule } from './order/order.module';
 import { DoorModule } from './door/door.module';
 import { DjSessionModule } from './dj-session/dj-session.module';
 import { GenreModule } from './genre/genre.module';
+import { CustomerModule } from './customer/customer.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { GenreModule } from './genre/genre.module';
     DoorModule,
     DjSessionModule,
     GenreModule,
+    CustomerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
