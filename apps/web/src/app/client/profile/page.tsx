@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiClient } from '../../../lib/api-client';
 import { io } from 'socket.io-client';
+import { motion } from 'framer-motion';
 
 const getSafeClientId = (): string => {
   if (typeof window === 'undefined') return 'unknown';

@@ -262,7 +262,7 @@ Este roadmap sigue la estrategia de "Círculos Concéntricos": Funcionalidad -> 
     *   Lógica de "Donation" para priorizar canciones (Pagar para saltar la cola).
 *   **Frontend:**
     *   Panel DJ: Interfaz para aprobar/rechazar canciones.
-    *   Cliente: Página para pedir/votar canciones (Web App accesible por QR).
+    *   Cliente: Página para pedir/votar canciones (Web App accesible por QR). ✅ 
 
 ### Fase 5: Vibe Manager (Plugin "Atmosphere") 🌈
 **Objetivo:** Controlar la experiencia sensorial (Luces, Música, AC).
@@ -295,6 +295,43 @@ Este proyecto es propiedad exclusiva de **AllStars2**.
 ```
 
 ---
+
+🎧 Core Features (Música & Control)
+✅ Sistema de Cola Inteligente: Algoritmo de ranking basado en Votos, Prioridad (Boost), Tiempo en cola y Antigüedad.
+✅ Control DJ (Dashboard): Interfaz para ver cola en tiempo real, reproducir (PLAYING) y saltar (PLAYED) canciones.
+✅ Votación en Tiempo Real: Los clientes votan y el contador sube instantáneamente en el DJ.
+✅ Estado Sincronizado: Indicadores visuales "Playing Now" (Verde) en DJ y Clientes vía WebSockets.
+✅ Modo Oscuro: Soporte completo de Dark/Light mode en Clientes y DJ.
+✅ Responsive: Diseño adaptado para móviles y escritorio.
+⚔️ Engagement Features (Interacción)
+✅ Batalla de Géneros:
+El DJ selecciona 3 géneros (ej: Reggaeton vs House vs Pop).
+La interfaz del Cliente cambia automáticamente a "Votación".
+Gráficos de barras en tiempo real en el DJ al recibir votos.
+Filtros visuales para mostrar solo los géneros seleccionados.
+✅ Sistema de Fidelización (Gamificación):
+Modelo Customer separado de User (Permite clientes anónimos).
+Acumulación de puntos por votar/pedir (+1 punto).
+Sistema de Rangos: Novato -> Bronce -> Plata -> Oro -> Platino -> Legendario.
+Perfil VIP: Pantalla personalizada con ID, Puntos y Nivel.
+✅ Tienda de Canjes:
+Interfaz modal para canjear puntos.
+Lógica backend para validar puntos suficientes.
+Sistema de recompensas configurables (Shots, Bebidas, VIP).
+✅ Live Updates:
+El perfil del cliente se actualiza en tiempo real cuando vota, sin recargar la página.
+Actualización instantánea de la Batalla de Géneros.
+🎨 UI/UX (Diseño y Animaciones)
+✅ Framer Motion: Animaciones de entrada en cascada (Waterfall) para las tarjetas de la Batalla de Géneros.
+✅ Feedback Visual: Transiciones suaves al cambiar de estados (Batalla vs Lista normal).
+✅ Estética: Tema oscuro (Cyberpunk/Club vibe) con acentos neón (Rosa, Verde, Amarillo).
+📝 Notas de Desarrollo
+Puertos:
+API: localhost:3000
+Web: localhost:3001
+DB: localhost:5433
+Sockets: Se utiliza un solo servidor Socket.io integrado en NestJS para manejar todos los eventos (queueUpdated, battleStarted, pointsUpdated).
+Seguridad: Actualmente en fase de desarrollo. La autenticación JWT está implementada en el backend pero la mayoría de endpoints de cliente usan IDs generados en localStorage para facilitar pruebas.
 
 ### Cómo usar este README
 

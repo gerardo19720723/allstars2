@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiClient } from '../../../lib/api-client';
 import { io } from 'socket.io-client';
+import { motion } from 'framer-motion';
 
 // Interfaces deben coincidir con lo que devuelve el Backend
 interface SongRequest {
@@ -225,28 +226,49 @@ export default function ClientRequestsPage() {
               <h2 className="text-2xl font-bold text-center mb-6 text-pink-500 animate-pulse">
                 ⚔️ ¿Que quieres escuchar?
               </h2>
-              <div className="grid grid-cols-1 gap-4">
-                {/* CAMBIO DE genres A battleGenres */}
-                {battleGenres.map((g) => (
-                  <button
+                          <div className="grid grid-cols-1 gap-4">
+                {battleGenres.map((g, index) => (
+                  // WRAP EN MOTION.DIV CON DELAY
+                  <motion.div
                     key={g.id}
-                    onClick={() => handleVoteGenre(g.id)}
-                    disabled={votedGenre === g.id}
-                    className={`
-                      relative p-8 rounded-xl border-2 text-center transition-all duration-300 transform hover:scale-105 active:scale-95
-                      ${votedGenre === g.id 
-                        ? 'bg-pink-600 border-pink-400 text-white opacity-90 cursor-default' 
-                        : 'bg-gray-800 border-gray-700 hover:border-pink-500 hover:bg-gray-700'
-                      }
-                    `}
+                    initial={{ opacity: 0, y: 20 }} // Empieza invisible y 20px abajo
+                    animate={{ opacity: 1, y: 0 }}    // Termina visible y en posición
+                    transition={{ delay: index * 0.15, duration: 0.5 }} // Retraso por tarjeta
                   >
-                    {votedGenre === g.id && (
-                      <div className="absolute top-2 right-2 text-2xl">✅</div>
-                    )}
-                    <div className="text-5xl mb-2">{g.emoji}</div>
-                    <div className="text-2xl font-bold">{g.name}</div>
-                    {votedGenre === g.id && <div className="text-sm mt-2">¡Tu voto! 🗳️</div>}
-                  </button>
+                    <button
+                      onClick={() => handleVoteGenre(g.id)}
+                      disabled={votedGenre === g.id}
+                      className={`
+                        relative p-8 rounded-xl border-2 text-center transition-all duration-300 transform hover:scale-105 active:scale-95 w-full
+                        ${votedGenre === g.id 
+                          ? 'bg-pink-600 border-pink-400 text-white opacity-90 cursor-default' 
+                          : 'bg-gray-800 border-gray-700 hover:border-pink-500 hover:bg-gray-700'
+                        }
+                      `}
+                    >
+                      {votedGenre === g.id && (
+                        <motion.div 
+                          initial={{ scale: 0 }} // Animación del checkmark
+                          animate={{ scale: 1 }}
+                          className="absolute top-2 right-2 text-2xl"
+                        >
+                          ✅
+                        </motion.div>
+                      )}
+                      <motion.div 
+                        initial={{ scale: 0.5, opacity: 0 }} // Animación del emoji
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: index * 0.15 + 0.1 }}
+                        className="text-5xl mb-2"
+                      >
+                        {g.emoji}
+                      </motion.div>
+                      <div className="text-2xl font-bold">{g.name}</div>
+                      {votedGenre === g.id && (
+                        <div className="text-sm mt-2">¡Tu voto! 🗳️</div>
+                      )}
+                    </button>
+                  </motion.div>
                 ))}
               </div>
             </div>
