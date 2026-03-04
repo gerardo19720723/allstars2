@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { calculateRank } from '../common/helpers/rank.helper';
 
 @Injectable()
 export class CustomerService {
@@ -16,13 +17,7 @@ export class CustomerService {
       return { id: customerId, points: 0, rank: 'NOVATO', email: null, phone: null };
     }
 
-    // Cálculo de Rango
-    let rank = 'Novato';
-    if (customer.points > 50) rank = 'Bronce';
-    if (customer.points > 150) rank = 'Plata';
-    if (customer.points > 300) rank = 'Oro';
-    if (customer.points > 500) rank = 'Platino';
-    if (customer.points > 1000) rank = 'LEGENDARIO';
+    const rank = calculateRank(customer.points);
 
     return {
       id: customer.id,

@@ -26,4 +26,23 @@ export class DjGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // 'queueUpdated' es el evento que escucha el Frontend
     this.server.emit('queueUpdated', queue);
   }
+
+    notifyBattleStarted(data: { sessionId: string; genreIds: string[] }) {
+    this.server.emit('battleStarted', data);
+  }
+
+  notifyBattleUpdated(results: any) {
+    // results = { "genre-id-1": 15, "genre-id-2": 30 }
+    this.server.emit('battleUpdated', results);
+  }
+
+  notifyBattleEnded(data: { sessionId: string }) {
+    this.server.emit('battleEnded', data);
+  }
+
+  // --- FIDELIZACIÓN / CLIENTE (NUEVO) ---
+
+  notifyPointsUpdated(data: { customerId: string; points: number }) {
+    this.server.emit('pointsUpdated', data);
+  }
 }

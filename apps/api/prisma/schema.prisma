@@ -35,10 +35,17 @@ model Tenant {
   accessLogs    AccessLog[]
   djSessions    DjSession[]
   customers Customer[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  valetSpots   ValetSpot[]
+  valetTickets ValetTicket[]
   genres       Genre[]
   genreSessions GenreSession[]
+  
+  cloakrooms    Cloakroom[]
+  securitys     Security[]  
+  dressingrooms Dressingroom[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model User {
@@ -67,6 +74,7 @@ model Customer {
   votes     CustomerVote[]
   orders    Order[]  // Los pedidos reales (bebidas/comida)
   genreVotes GenreVote[]
+  valetTickets ValetTicket[]
   createdAt DateTime @default(now())
 }
 
@@ -234,4 +242,86 @@ model GenreVote {
   
   // Un cliente solo puede votar UNA vez por sesión de batalla
   @@unique([customerId, sessionId])
+}
+
+model ValetSpot {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  
+  level     String   @default("Piso 1") 
+  number    String   // "01", "A1"
+  status    String   @default("FREE")   // FREE, OCCUPIED
+  
+  // CAMBIO IMPORTANTE: Ahora un cajón puede tener tickets históricos
+  tickets   ValetTicket[] 
+
+  @@unique([tenantId, level, number]) 
+  @@index([tenantId, status])
+}
+
+model ValetTicket {
+  id          String   @id @default(cuid())
+  ticketCode  String   @unique
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id]) 
+  
+  spotId      String
+  spot        ValetSpot @relation(fields: [spotId], references: [id])
+  
+  customerId  String?  
+  customer    Customer? @relation(fields: [customerId], references: [id])
+
+  status      String   @default("ACTIVE") // ACTIVE, EXITED, ARCHIVED
+  createdAt   DateTime @default(now())
+  exitAt      DateTime?
+  
+  @@index([ticketCode])
+}
+
+model Cloakroom {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  
+  description String   // Descripción de la prenda
+  ticketCode  String   @unique // Código/Ganchillo
+  status      String   @default("STORED") // STORED, RETURNED
+  customerName String? // Nombre del cliente
+  storedAt    DateTime @default(now())
+  returnedAt  DateTime?
+
+  @@index([tenantId, status])
+}
+
+model Security {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  
+  type        String   // FIGHT, THEFT, DRUNK, MEDICAL
+  description String
+  location    String?
+  status      String   @default("OPEN") // OPEN, RESOLVED
+  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH
+  reportedBy  String?
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+
+  @@index([tenantId, status])
+}
+
+model Dressingroom {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  
+  name        String   // Nombre del cuarto
+  status      String   @default("FREE") // FREE, OCCUPIED, MAINTENANCE
+  occupantName String?
+  notes       String?
+  occupiedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, status])
 }
