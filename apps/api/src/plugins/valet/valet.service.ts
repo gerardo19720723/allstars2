@@ -87,6 +87,43 @@ export class ValetService {
     return newTicket;
   }
 
+    /**
+   * CLIENTE: Vincula un ticket a su cuenta.
+   * El usuario escanea o escribe el código del ticket.
+   */
+  async claimTicket(customerId: string, ticketCode: string, tenantId: string) {
+    // 1. Buscar el ticket activo y que no tenga dueño (o que sea el mismo dueño)
+    const ticket = await this.prisma.valetTicket.findFirst({
+      where: { 
+        ticketCode, 
+        tenantId, 
+        status: 'ACTIVE' 
+      },
+      include: { spot: true }
+    });
+
+    if (!ticket) {
+      throw new BadRequestException('Código de ticket inválido, expirado o inexistente');
+    }
+
+    // Opcional: Si el ticket ya tiene dueño y es otro usuario, bloquear
+    if (ticket.customerId && ticket.customerId !== customerId) {
+      throw new BadRequestException('Este ticket ya está vinculado a otro usuario');
+    }
+
+    // 2. Vincular o Devolver información si ya estaba vinculado
+    if (!ticket.customerId) {
+      const updated = await this.prisma.valetTicket.update({
+        where: { id: ticket.id },
+        data: { customerId: customerId },
+        include: { spot: true }
+      });
+      return updated;
+    }
+
+    return ticket; // Ya estaba vinculado, devolvemos los datos
+  }
+
   /**
    * Salida de Vehículo (Usando el código de ticket).
    * Marca el ticket como EXITED y libera el cajón (FREE).

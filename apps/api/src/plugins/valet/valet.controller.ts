@@ -36,4 +36,12 @@ export class ValetController {
   ) {
     return this.valetService.exitVehicle(tenantId, body.ticketCode);
   }
+
+    @Post('claim')
+  claimTicket(
+    @Headers('x-tenant-id') tenantId: string, 
+    @Body() body: { customerId: string; ticketCode: string }
+  ) {
+    return this.valetService.claimTicket(body.customerId, body.ticketCode, tenantId);
+  }
 }
