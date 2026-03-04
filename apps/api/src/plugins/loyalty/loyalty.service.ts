@@ -37,29 +37,34 @@ export class LoyaltyService {
     };
   }
 
-  async redeemReward(customerId: string, rewardCost: number) {
-  const customer = await this.prisma.customer.findUnique({
-    where: { id: customerId },
-  });
+  async redeemReward(customerId: string, cost: number) {
+    // 1. Buscar cliente
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+    });
 
-  if (!customer) {
-    throw new BadRequestException('Customer not found');   // guard clause
+    if (!customer) throw new BadRequestException('Cliente no encontrado');
+
+    // 2. Validar Puntos
+    if (customer.points < cost) {
+      throw new BadRequestException(`Puntos insuficientes. Tienes ${customer.points} y necesitas ${cost}.`);
+    }
+
+    // 3. Transacción: Descontar puntos
+    const updatedCustomer = await this.prisma.customer.update({
+      where: { id: customerId },
+      data: {
+        points: { decrement: cost },
+      },
+    });
+
+    // 4. Calcular nuevo rango (puede que baje de nivel si canjea mucho)
+    const newRank = calculateRank(updatedCustomer.points);
+
+    return { 
+      success: true, 
+      newPoints: updatedCustomer.points, 
+      newRank 
+    };
   }
-
-  if (customer.points < rewardCost) {
-    throw new BadRequestException('Insufficient points');
-  }
-
-  const updatedCustomer = await this.prisma.customer.update({
-    where: { id: customerId },
-    data: {
-      points: { decrement: rewardCost },
-    },
-  });
-
-  return {
-    ...updatedCustomer,
-    newRank: calculateRank(updatedCustomer.points),
-  };
-}
 }
