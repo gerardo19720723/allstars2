@@ -213,7 +213,7 @@ export default function CloakroomStaffPage() {
       {/* HEADER */}
       <header className="mb-8 flex justify-between items-end border-b border-gray-800 pb-4">
         <div>
-          <h1 className="text-3xl font-bold text-purple-500 tracking-wider">GUARDARROBA</h1>
+          <h1 className="text-3xl font-bold text-purple-500 tracking-wider">GUARDARROPA</h1>
           <p className="text-gray-400 text-sm mt-1">Gestión de Efectos Personales</p>
         </div>
         
@@ -387,7 +387,7 @@ export default function CloakroomStaffPage() {
 
       {/* ÁREA DE IMPRESIÓN */}
       <div id="printable-ticket">
-        <h1 className="text-2xl font-bold mb-4">ALLSTARS GUARDARROBA</h1>
+        <h1 className="text-2xl font-bold mb-4">ALLSTARS GUARDARROPA</h1>
         <p className="text-lg mb-2">Código:</p>
         <p className="text-6xl font-mono font-bold border-4 border-black p-4 mb-4">
           {selectedSpot?.ticket?.ticketCode || '----'}
