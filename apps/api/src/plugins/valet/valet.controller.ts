@@ -24,9 +24,9 @@ export class ValetController {
   @Post('assign')
   assignSpot(
     @Headers('x-tenant-id') tenantId: string, 
-    @Body() body: { spotId: string }
+    @Body() body: { spotId: string; customerId?: string }
   ) {
-    return this.valetService.assignSpot(tenantId, body.spotId);
+    return this.valetService.assignSpot(tenantId, body.spotId, body.customerId);
   }
 
   @Post('exit')
@@ -43,5 +43,13 @@ export class ValetController {
     @Body() body: { customerId: string; ticketCode: string }
   ) {
     return this.valetService.claimTicket(body.customerId, body.ticketCode, tenantId);
+  }
+
+    @Post('request-car')
+  requestCar(
+    @Headers('x-tenant-id') tenantId: string, 
+    @Body() body: { ticketCode: string }
+  ) {
+    return this.valetService.requestCar(body.ticketCode, tenantId);
   }
 }
