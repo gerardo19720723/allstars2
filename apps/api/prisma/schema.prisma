@@ -40,7 +40,9 @@ model Tenant {
   genres       Genre[]
   genreSessions GenreSession[]
   
-  cloakrooms    Cloakroom[]
+  cloakroomBins  CloakroomBin[] // <--- AGREGA ESTO
+  cloakrooms     CloakroomItem[]
+
   securitys     Security[]  
   dressingrooms Dressingroom[]
 
@@ -75,6 +77,7 @@ model Customer {
   orders    Order[]  // Los pedidos reales (bebidas/comida)
   genreVotes GenreVote[]
   valetTickets ValetTicket[]
+  cloakroomItems CloakroomItem[]
   createdAt DateTime @default(now())
 }
 
@@ -279,18 +282,42 @@ model ValetTicket {
   @@index([ticketCode])
 }
 
-model Cloakroom {
+model CloakroomBin {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  
+  section   String   // "A", "B", "C" (Equivalente a Piso)
+  number    String   // "01", "02" (Número de ganchillo/cajón)
+  status    String   @default("FREE") // FREE, OCCUPIED
+  
+  // Relación con los items guardados
+  items     CloakroomItem[]
+
+  @@unique([tenantId, section, number])
+  @@index([tenantId, status])
+}
+
+model CloakroomItem {
   id          String   @id @default(cuid())
   tenantId    String
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
   
-  description String   // Descripción de la prenda
-  ticketCode  String   @unique // Código/Ganchillo
+  // CAMBIO IMPORTANTE: Ahora pertenece a un Bin
+  binId       String
+  bin         CloakroomBin @relation(fields: [binId], references: [id])
+  
+  description String
+  quantity    Int      @default(1) // <--- NUEVO: Para controversias
+  ticketCode  String   @unique
   status      String   @default("STORED") // STORED, RETURNED
-  customerName String? // Nombre del cliente
+  customerName String?
   storedAt    DateTime @default(now())
   returnedAt  DateTime?
-
+  
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  
   @@index([tenantId, status])
 }
 
